@@ -63,9 +63,10 @@ class Robot:
                 print "|    %s:%s   " % (item,result[item])
             print(u"--------------登录信息------------------")
 
-            print 'login success!'
+            # print 'login success!'
         else:
-            print 'login faild!'
+            pass
+            # print 'login faild!'
     #获取主题列表。json.
     def getTids(self):
         # self.token = "7ade721c39fcb6bd9d8da3f28149147c"
@@ -169,48 +170,98 @@ class Robot:
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
         response = opener.open(request,data)
         html = response.read().decode("gbk")
-        print("%s" % html)
+        # print("%s" % html)
+        result  = json.loads(html)
+        return result
 
         print 'reply success!'
-
-def loop():
+#传递上一次的fid
+def loop(fid=0):
     cf = ConfigParser.ConfigParser()
     cf.read('config.ini')
     username = cf.get("info","username")
     password = cf.get("info","password")
     speed = cf.get("info","speed")
+    speed = float(speed)
     robot = Robot('http://bbs.hefei.cc', username, password)
     robot.login()
-    replylist = [
-            u'不错，支持一下.......',
-            u'已阅，顶一下.......',
-            u'顶一个...........',
-            u'路过帮顶........',
-            u'沙发，沙发.....',
-            u'我的沙发........',
-            u'我来了.........',
-            u'沙发是我的......',
-            u'我来看看.......',
-            u'前排，前排........'
-    ]
+    replylist = getReplylist()
+    # replylist = [
+    #         u'不错，支持一下.......',
+    #         u'已阅，顶一下.......',
+    #         u'顶一个...........',
+    #         u'路过帮顶........',
+    #         u'沙发，沙发.....',
+    #         u'我的沙发........',
+    #         u'我来了.........',
+    #         u'沙发是我的......',
+    #         u'我来看看.......',
+    #         u'前排，前排........'
+    # ]
+    time.sleep(2)
     #随机获取一些帖子。进行回复。回复一个，就删除一个。如果回复完了，再次获取。
     fids = robot.getFids()
     #设置fid
-    robot.fid = random.choice(fids)
+    while True:
+        temp = random.choice(fids)
+        #如果不等于则跳过循环。
+        if temp != fid:
+            break
+    robot.fid = temp
     #获取tids
+    time.sleep(2)
     tids = robot.getTids()
+    tidstr = ",".join(tids)
+    print u"随机获取帖子id的集合为:%s" % tidstr
+
     for item in tids:
         print item
-        print "http://bbs.hefei.cc/thread-"+item+"-1-1.html"
+        print u"正在回复:"+"http://bbs.hefei.cc/thread-"+item+"-1-1.html"
         content = random.choice(replylist)
         content = content.encode('utf-8')
-        robot.reply(item,content)
+        result = robot.reply(item,content)
+        if not result['success']:
+            # print "too quick..."
+            print result['msg']
+            #睡眠时间延长。
+            speed = speed +120
+        else:
+            data = result['data']
+            print(u"--------------回帖信息------------------")
+            for item in data.keys():
+                print "|    %s:%s   " % (item,data[item])
+            print(u"--------------回帖信息------------------")
         #20秒后再回复。
+        print(u"等待%s秒后再次操作" % speed)
         time.sleep(speed)
     #递归调用自身.
-    loop()
+    loop(temp)
+#获取txt中的内容
+def getReplylist():
+    result=[]
+    with open('replylist.txt','r') as f:
+        for line in f:
+            result.append(line.decode("utf-8").replace("\n",""))
+            # print line
+        # print(result)
+        return result
+    # replylist = [
+    #         u'不错，支持一下.......',
+    #         u'已阅，顶一下.......',
+    #         u'顶一个...........',
+    #         u'路过帮顶........',
+    #         u'沙发，沙发.....',
+    #         u'我的沙发........',
+    #         u'我来了.........',
+    #         u'沙发是我的......',
+    #         u'我来看看.......',
+    #         u'前排，前排........'
+    # ]
+
+    # print replylist
 
 if __name__ == '__main__':
+    # getReplylist()
     loop()
     # cf = ConfigParser.ConfigParser()
     # cf.read('config.ini')
