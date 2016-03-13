@@ -28,23 +28,22 @@ class Robot:
         urllib2.install_opener(openner)
 
     def login(self):
-        request = urllib2.Request("http://newapp.hefei.cc/mv3_user_login")
+        request = urllib2.Request("https://www.wish.com/api/email-login")
 
-        request.add_header('Host', 'newapp.hefei.cc')
-        request.add_header("User_Agent","Android client")
-        request.add_header("Cookie","PHPSESSID=1g9hf0vrv59bb8v2mbuo4mb677")
-        request.add_header("Mag-Deviceid","860076030620446")
-        request.add_header("Mag-Mgsc","31d0477d5d506e967a8614b890636905")
+        request.add_header('Host', 'www.wish.com')
+        request.add_header("Referer","https://www.wish.com/m?time=1457328489155")
+        # request.add_header("Cookie","__utmt=1; _xsrf=cff781c64baa464183140b92044a066f; __utma=96128154.45298113.1457328069.1457328069.1457328069.1; __utmb=96128154.7.10.1457328069; __utmc=96128154; __utmz=96128154.1457328069.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); bsid=99ddd3ae03f44af597be9bb7c51f58f4; sweeper_uuid=1d033d1cff0d4a368ef73a51bec5a917")
+        request.add_header("Cookie","sweeper_uuid=1d033d1cff0d4a368ef73a51bec5a917")
+        # request.add_header("Cookie","12121")
+        request.add_header("X-XSRFToken","cff781c64baa464183140b92044a066f")
+        request.add_header("Origin","https://www.wish.com")
 
         data = {
-            "device":860076030620446,
-            "build":"3.1.0",
-            "ulng":"4.9E-324",
-            "version":136,
-            "name":self.userName,
-            "clienttype":"android",
-            "ulat":"4.9E-324",
-            "pswd":self.password,
+            "email":"hi_php@163.com",
+            "password":"123456",
+            "_app_type":"wish",
+            "_client":"mobileweb",
+            "_version":"1.0.0",
         }
 
 
@@ -53,20 +52,27 @@ class Robot:
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
         response = opener.open(request,data)
         content = response.read()
-        if self.userName in content:
-            self.isLogon = True
+        # print content
+        # exit(0)
+        if True:
             #解析json。
             result = json.loads(content)
-            self.token = result['token']
             print(u"--------------登录信息------------------")
             for item in result.keys():
-                print "|    %s:%s   " % (item,result[item])
+                if item == "data":
+                    for ite in result[item].keys():
+                        print "|    %s:%s   " % (ite,result[item][ite])
+
+                else:
+                    print "|    %s:%s   " % (item,result[item])
+
             print(u"--------------登录信息------------------")
 
             # print 'login success!'
         else:
             pass
             # print 'login faild!'
+        exit(0)
     #获取主题列表。json.
     def getTids(self):
         # self.token = "7ade721c39fcb6bd9d8da3f28149147c"

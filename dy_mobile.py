@@ -13,8 +13,9 @@ class Robot:
         self.userName = userName
         self.password = password
         self.token = ''
-        self.fid = 297
+        self.fid = 2497
         self.isLogon = False
+        self.formhash=''
 
 
         self.jar = cookielib.CookieJar()
@@ -28,23 +29,18 @@ class Robot:
         urllib2.install_opener(openner)
 
     def login(self):
-        request = urllib2.Request("http://newapp.hefei.cc/mv3_user_login")
+        request = urllib2.Request("http://bbs.duowan.com/api/mobile/?module=login&action=verifycode&version=2")
 
-        request.add_header('Host', 'newapp.hefei.cc')
-        request.add_header("User_Agent","Android client")
-        request.add_header("Cookie","PHPSESSID=1g9hf0vrv59bb8v2mbuo4mb677")
-        request.add_header("Mag-Deviceid","860076030620446")
-        request.add_header("Mag-Mgsc","31d0477d5d506e967a8614b890636905")
+        request.add_header('Host', 'bbs.duowan.com')
+        request.add_header("User_Agent","DuowanBbs_Android/2.0.3_284/6.0/HUAWEI NXT-AL10/6c5cc111-5883-4de8-8c63-2dd7a595fa9b")
+        # request.add_header("Cookie","Cookie")
+        # request.add_header("Mag-Deviceid","860076030620446")
+        # request.add_header("Mag-Mgsc","31d0477d5d506e967a8614b890636905")
 
         data = {
-            "device":860076030620446,
-            "build":"3.1.0",
-            "ulng":"4.9E-324",
-            "version":136,
-            "name":self.userName,
-            "clienttype":"android",
-            "ulat":"4.9E-324",
-            "pswd":self.password,
+            "deviceId":"00000000-6de2-6f96-ffff-fffff092bdfb",
+            "appToken":"rrBwwTLmIUM9lzZnfwtHT0QIYFo0nVHPJhlAnvsQ9k7ogUzA8UZvIOAagIt+5a8QSNe9xBdjZct3wDKOn/y3whZqZXaKrlFBRFrdEPj8fgo=",
+            "yyuid":"75786795",
         }
 
 
@@ -53,15 +49,29 @@ class Robot:
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
         response = opener.open(request,data)
         content = response.read()
-        if self.userName in content:
+        # print content
+        # exit()
+        if "45690584" in content:
             self.isLogon = True
             #解析json。
             result = json.loads(content)
-            self.token = result['token']
+            # self.token = result['token']
             print(u"--------------登录信息------------------")
             for item in result.keys():
-                print "|    %s:%s   " % (item,result[item])
+                if item == "Variables" or item == 'Message':
+                    # print result[item].keys()
+                    for it in result[item].keys():
+                         print "|    %s:%s   " % (it,result[item][it])
+                         if it == "formhash":
+                             self.formhash = result[item][it]
+                    # resultchild = json.loads(result[item])
+                    # print resultchild
+                    # for itemchild in resultchild.keys():
+                    #     print "|    %s:%s   " % (itemchild,resultchild[itemchild])
+                else:
+                    print "|    %s:%s   " % (item,result[item])
             print(u"--------------登录信息------------------")
+            # exit()
 
             # print 'login success!'
         else:
@@ -150,27 +160,26 @@ class Robot:
             print 'none formhash!'
 
     def reply(self,tid,msg):
+
         html = ''
-        request = urllib2.Request("http://newapp.hefei.cc/mv3_bbs_commentadd")
-        request.add_header('Host', 'newapp.hefei.cc')
-        request.add_header("User_Agent","Android client")
-        request.add_header("Cookie","PHPSESSID=1g9hf0vrv59bb8v2mbuo4mb677")
-        request.add_header("Mag-Deviceid","860076030620446")
-        request.add_header("Mag-Mgsc","31d0477d5d506e967a8614b890636905")
+        request = urllib2.Request("http://bbs.duowan.com/api/mobile/?module=sendreply&version=2")
+        request.add_header('Host', 'bbs.duowan.com')
+        request.add_header('Content-Type', 'multipart/form-data; boundary=YDAkwzi9e85c7qAdLaFImAPqPRjLTI_3')
+        request.add_header("User_Agent","DuowanBbs_Android/2.0.3_284/6.0/HUAWEI NXT-AL10/6c5cc111-5883-4de8-8c63-2dd7a595fa9b")
+        request.add_header("Cookie","bbs_4477_lastvisit=1457062403; bbs_4477_pc_size_c=0; bbs_4477_ulastactivity=a6bfi5ZnQxCyTYiMHzpXH6cJ0%2FtnWv0%2FugcKLc%2Bv%2FbQNinb%2BfKdu; bbs_4477_forum_lastvisit=D_992_1457066004; bbs_4477_forum_lastpage=992_1; bbs_4477_mobile=no; bbs_4477_lastact=1457066009%09index.php%09viewthread; bbs_4477_fid2497=1457335572; bbs_4477_visitedfid=2497D992; bbs_4477_sid=MpgGim; bbs_4477_auth=6e73vnrq/msY7yIUGpzQgjblY+v/bCNH2nPUV7aNCaoVaLd8LlmJxiYIXh8FpAkWNMGhq7/p8Lbd0IlgXpErtX+ttxY91w; bbs_4477_saltkey=ll12jJBd")
         data = {
-            "_token":self.token,
-            "build":"3.1.0",
-            "contentid":tid,
-            "version":135,
-            "clienttype":"android",
-            "commentid":0,
-            "content":msg,
+            'Content-Disposition: form-data; name="formhash"Content-Type: text/plain; charset=UTF-8Content-Transfer-Encoding: 8bit':"5d1fea8e",
+            'Content-Disposition: form-data; name="replysubmit"Content-Type: text/plain; charset=UTF-8Content-Transfer-Encoding: 8bit':"yes",
+            'Content-Disposition: form-data; name="tid"Content-Type: text/plain; charset=UTF-8Content-Transfer-Encoding: 8bit':"44316203",
+            'Content-Disposition: form-data; name="fid"Content-Type: text/plain; charset=UTF-8Content-Transfer-Encoding: 8bit':"2497",
+            'Content-Disposition: form-data; name="message"Content-Type: text/plain; charset=UTF-8Content-Transfer-Encoding: 8bit':"iamtheking",
         }
+        print data
         data = urllib.urlencode(data)
         opener = urllib2.build_opener(urllib2.HTTPCookieProcessor())
         response = opener.open(request,data)
         html = response.read().decode("gbk")
-        # print("%s" % html)
+        print("%s" % html)
         result  = json.loads(html)
         return result
 
@@ -201,7 +210,7 @@ def loop():
     password = cf.get("info","password")
     speed = cf.get("info","speed")
     speed = float(speed)
-    robot = Robot('http://bbs.hefei.cc', username, password)
+    robot = Robot('http://bbs.duowan.com', username, password)
     robot.login()
     replylist = getReplylist()
     # replylist = [
@@ -222,11 +231,12 @@ def loop():
     #设置fid
     # while True:
     # temp = random.choice(fids)
-    temp = 34
+    temp = 2497
     robot.fid = temp
     #获取tids
     time.sleep(2)
-    tids = robot.getTids()
+    # tids = robot.getTids()
+    tids = ['44316203']
 
     tidstr = ",".join(tids)
     print u"随机获取帖子id的集合为:%s" % tidstr
@@ -236,13 +246,15 @@ def loop():
             print(u"未到工作时间")
             time.sleep(30)
         print item
-        print u"正在回复:"+"http://bbs.hefei.cc/thread-"+item+"-1-1.html"
+        print u"正在回复:"+"http://bbs.duowan.com/thread-"+item+"-1-1.html"
         content = random.choice(replylist)
         content = content.encode('utf-8')
+        print content
         try:
+            print "11111"
             result = robot.reply(item,content)
         except Exception,e:
-            print(u'回帖发生异常。进入下一步。%s' % e)
+            print(u'回帖发生异常。进入下一步。%' % e)
             time.sleep(30)
             continue
 
@@ -290,7 +302,7 @@ if __name__ == '__main__':
         try:
             loop()
         except Exception,e:
-            print(u'发现异常,睡眠50秒')
+            print(u'发现异常,睡眠50秒%s' % e)
             time.sleep(30)
 
     # cf = ConfigParser.ConfigParser()

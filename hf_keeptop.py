@@ -226,7 +226,9 @@ def loop():
     robot.fid = temp
     #获取tids
     time.sleep(2)
-    tids = robot.getTids()
+
+    # tids = robot.getTids()
+    tids=['14002333']
 
     tidstr = ",".join(tids)
     print u"随机获取帖子id的集合为:%s" % tidstr
@@ -242,7 +244,7 @@ def loop():
         try:
             result = robot.reply(item,content)
         except Exception,e:
-            print(u'回帖发生异常。进入下一步。%s' % e)
+            print(u'回帖发生异常。进入下一步。')
             time.sleep(30)
             continue
 
@@ -256,6 +258,7 @@ def loop():
             print(u"--------------回帖信息------------------")
             for item in data.keys():
                 print "|    %s:%s   " % (item,data[item])
+            print "|    %s:%s   " % ('msg',result['msg'])
             print(u"--------------回帖信息------------------")
         #20秒后再回复。
         print(u"等待%s秒后再次操作" % speed)
