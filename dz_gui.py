@@ -39,7 +39,7 @@ class MainWindow(wx.Frame):
     '''定义一个窗口类'''
 
     def __init__(self, parent, title):
-        wx.Frame.__init__(self, parent, title=title, size=(600, 600))
+        wx.Frame.__init__(self, parent, title=title, size=(600, 700))
 
         self.myqueue = Queue.Queue(maxsize = 10)
 
@@ -72,6 +72,10 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_MENU, self.onAbout, mnuabout)
         self.Bind(wx.EVT_MENU, self.onExit, mnuexit)
 
+        #窗口关闭事件。
+        self.Bind(wx.EVT_CLOSE,self.OnClose)
+
+
         self.SetMenuBar(menubar)
 
     def onAbout(self, evt):
@@ -84,6 +88,13 @@ class MainWindow(wx.Frame):
         '''点击退出'''
         self.isExit = True
         self.Close(True)
+    def OnClose(self, evt):
+        ret = wx.MessageBox(u'你确定要退出软件?',  'Confirm', wx.OK|wx.CANCEL)
+        if ret == wx.OK:
+            # do something here...
+            self.isExit = True
+            evt.Skip()
+
 
     def setupContent(self):
         panel = wx.Panel(self, -1)
@@ -93,9 +104,16 @@ class MainWindow(wx.Frame):
         self.objs['top'] = topLbl
 
         siteLabel = wx.StaticText(panel, -1, u"站点域名:")
-        siteText = wx.TextCtrl(panel, -1, "http://bbs.luanren.com",size=(400,-1))
-        siteText.Enable(False)
+        # siteText = wx.TextCtrl(panel, -1, "http://bbs.luanren.com",size=(400,-1))
+        # siteText.Enable(False)
 
+        sampleList = ['http://bbs.luanren.com', 'http://bbs.chizhouren.com']
+
+        listBox = wx.ListBox(panel, -1, (20, 20), (400, -1), sampleList,
+                wx.LB_SINGLE)
+        listBox.SetSelection(0)
+
+        siteText = listBox
         self.objs['host'] = siteText
 
         usernameLabel = wx.StaticText(panel, -1, u"账号:")
@@ -123,7 +141,7 @@ class MainWindow(wx.Frame):
         self.objs['speed'] = speedText
 
         #状态区
-        msgLabel =  wx.TextCtrl(panel,-1,u"工具准备ok！",style=wx.TE_MULTILINE|wx.TE_READONLY,size=(500,220))
+        msgLabel =  wx.TextCtrl(panel,-1,u"针对采用discuzz开发的论坛，可以实现帖子置顶功能。暂定支持bbs.luanren.com，后期会陆续增加更多的支持。作者:吴文付 hi_php@163.com",style=wx.TE_MULTILINE|wx.TE_READONLY,size=(500,220))
 
         self.objs['msg'] = msgLabel
 
@@ -137,6 +155,10 @@ class MainWindow(wx.Frame):
         configSizer.Add(siteLabel, 0,
                 wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
         configSizer.Add(siteText, 0, wx.EXPAND)
+        # configSizer.Add(listBox, 0, wx.EXPAND)
+
+
+
         configSizer.Add(usernameLabel, 0,
                 wx.ALIGN_RIGHT|wx.ALIGN_CENTER_VERTICAL)
         configSizer.Add(usernameText, 0, wx.EXPAND)
@@ -181,7 +203,8 @@ class MainWindow(wx.Frame):
         self.Bind(wx.EVT_BUTTON, self.onStop, cancelBtn)
 
     def checkValue(self):
-        self.host = self.objs['host'].GetValue()
+        # self.host = self.objs['host'].GetValue()
+        self.host = self.objs['host'].GetStringSelection()
         self.objs['msg'].AppendText(u'网站地址:%s\n' % self.host);
 
 
@@ -196,6 +219,19 @@ class MainWindow(wx.Frame):
 
         self.speed = self.objs['speed'].GetValue()
         self.objs['msg'].AppendText(u'回帖速度:%s秒\n'% self.speed);
+
+        try:
+            self.msgs = getReplylist()
+        except Exception,e:
+            self.objs['msg'].AppendText(u'读取回帖列表出现异常:%s.\n' % e);
+            return
+        self.msgs = getReplylist()
+
+        self.objs['msg'].AppendText(u'回帖列表(随机取一条回帖)...\n');
+        i = 0
+        for msg in self.msgs:
+            i = i+1
+            self.objs['msg'].AppendText(u'%d.%s\n' %(i,msg));
         self.objs['msg'].AppendText(u'------------------------------------------------\n');
 
 
@@ -206,18 +242,21 @@ class MainWindow(wx.Frame):
         # print(u'启动了')
         self.objs['msg'].AppendText(u'\n获取参数...\n');
         self.checkValue()
-        self.msgs = [
-            u'不错，支持一下.......',
-            u'已阅，顶一下.......',
-            u'顶一个...........',
-            u'路过帮顶........',
-            u'沙发，沙发.....',
-            u'我的沙发........',
-            u'我来了.........',
-            u'沙发是我的......',
-            u'我来看看.......',
-            u'前排，前排........'
-        ]
+        self.msgs = getReplylist()
+        # self.msgs = [
+        #     u'不错，支持一下.......',
+        #     u'已阅，顶一下.......',
+        #     u'顶一个...........',
+        #     u'路过帮顶........',
+        #     u'沙发，沙发.....',
+        #     u'我的沙发........',
+        #     u'我来了.........',
+        #     u'沙发是我的......',
+        #     u'我来看看.......',
+        #     u'前排，前排........'
+        # ]
+        print self.msgs
+
         replyobj =  dz_reply.dz_reply(self.host,self.username,self.pwd,self.tid,self.speed,self.msgs)
         if replyobj.islogin():
             self.objs['msg'].AppendText(u'登录成功...\n')
@@ -268,18 +307,22 @@ class MainWindow(wx.Frame):
 
         self.objs['msg'].AppendText(u'\n获取参数...\n');
         self.checkValue()
-        self.msgs = [
-            u'不错，支持一下.......',
-            u'已阅，顶一下.......',
-            u'顶一个...........',
-            u'路过帮顶........',
-            u'沙发，沙发.....',
-            u'我的沙发........',
-            u'我来了.........',
-            u'沙发是我的......',
-            u'我来看看.......',
-            u'前排，前排........'
-        ]
+
+
+        # print self.msgs
+        # exit()
+        # self.msgs = [
+        #     u'不错，支持一下.......',
+        #     u'已阅，顶一下.......',
+        #     u'顶一个...........',
+        #     u'路过帮顶........',
+        #     u'沙发，沙发.....',
+        #     u'我的沙发........',
+        #     u'我来了.........',
+        #     u'沙发是我的......',
+        #     u'我来看看.......',
+        #     u'前排，前排........'
+        # ]
         # replyobj =  dz_reply.dz_reply(self.host,self.username,self.pwd,self.tid,self.speed,self.msgs)
 
         self.sinal = threading.Event()
@@ -298,6 +341,14 @@ def updateInfo(frame):
             break;
         if not frame.myqueue.empty():
             frame.objs['msg'].AppendText(frame.myqueue.get())
+
+#获取txt中的内容
+def getReplylist():
+    result=[]
+    with open('replylist.txt','r') as f:
+        for line in f:
+            result.append(line.decode("utf-8").replace("\n",""))
+        return result
 
 
 def main():
