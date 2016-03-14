@@ -16,6 +16,11 @@ import wx
 import dz_reply
 import threading
 import time
+import thread
+
+import Queue
+
+# isExit = False #退出按钮
 
 
 flag = False #开关。
@@ -36,9 +41,14 @@ class MainWindow(wx.Frame):
     def __init__(self, parent, title):
         wx.Frame.__init__(self, parent, title=title, size=(600, 600))
 
+        self.myqueue = Queue.Queue(maxsize = 10)
+
         self.objs ={}
 
         self.isStop = False #是否停止。
+        self.isExit = False
+
+
 
         self.sinal = False
 
@@ -72,6 +82,7 @@ class MainWindow(wx.Frame):
 
     def onExit(self, evt):
         '''点击退出'''
+        self.isExit = True
         self.Close(True)
 
     def setupContent(self):
@@ -153,7 +164,8 @@ class MainWindow(wx.Frame):
         startBtn = wx.Button(panel, -1, u"启动")
         self.startBtn = startBtn
         cancelBtn = wx.Button(panel, -1, u"停止")
-        self.startBtn = cancelBtn
+        cancelBtn.Disable()
+        self.cancelBtn = cancelBtn
 
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.Add((20,20), 1)
@@ -226,21 +238,34 @@ class MainWindow(wx.Frame):
             self.objs['msg'].AppendText(u'第%s次回帖:%s' % (replyobj.count,replyobj.status))
             self.objs['msg'].AppendText(u'等待:%s秒\n' % self.speed)
             # thread
-            time.sleep(float(self.speed))
+            for i in xrange(int(self.speed)):
+                #rugu
+                if not self.isStop:
+                    time.sleep(1)
+                else:
+                    return
+            # time.sleep(float(self.speed))
+
+
+
     def onStop(self,evt):
-        print(u'停止了')
-        # self.startBtn.Enable(True)
-        self.startBtn.Disable()
+
+        self.startBtn.Enable()
+        self.cancelBtn.Disable()
+
         self.isStop = True
 
         if self.sinal and self.sinal.isSet():
             self.sinal.clear() #设置信号为假的
-
-
-
-        pass
+        self.objs['msg'].AppendText(u'程序停止');
 
     def onStart(self,evt):
+
+
+        self.startBtn.Disable() #按钮变灰。
+
+        self.cancelBtn.Enable() #启用按钮
+
         self.objs['msg'].AppendText(u'\n获取参数...\n');
         self.checkValue()
         self.msgs = [
@@ -258,23 +283,30 @@ class MainWindow(wx.Frame):
         # replyobj =  dz_reply.dz_reply(self.host,self.username,self.pwd,self.tid,self.speed,self.msgs)
 
         self.sinal = threading.Event()
-        t = dz_reply.dz_reply("回复线程1",self.sinal,self.host,self.username,self.pwd,self.tid,self.speed,self.msgs)
+        t = dz_reply.dz_reply(self.myqueue,"回复线程1",self.sinal,self.host,self.username,self.pwd,self.tid,self.speed,self.msgs)
         t.start()
 
         self.sinal.set()
 
 
 
-        # self.startBtn.Enable(False) #禁用按钮
-        # self.startBtn.Disable()
-        # self.isStop = False
-        # thread.start_new_thread(self.replyTopic(),())
-        # pass
+
+def updateInfo(frame):
+    while True:
+        #如果退出了。
+        if frame.isExit:
+            break;
+        if not frame.myqueue.empty():
+            frame.objs['msg'].AppendText(frame.myqueue.get())
+
 
 def main():
+    # global isExit
     app = wx.App(False)
     frame = MainWindow(None, u'论坛工具')
+    thread.start_new_thread(updateInfo,(frame,))
     app.MainLoop() #循环监听事
+
 
 
 

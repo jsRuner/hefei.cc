@@ -24,9 +24,11 @@ import traceback
 
 #回复类。传递所有的参数进来。
 class dz_reply(threading.Thread):
-    def __init__(self,threadName,event,host,username,pwd,tid,speed,msgs=[]):
+    def __init__(self,queue,threadName,event,host,username,pwd,tid,speed,msgs=[]):
         threading.Thread.__init__(self,name=threadName)
         self.threadEvent = event
+
+        self.queue = queue #队列。
 
         self.host = host
         self.username = username
@@ -51,13 +53,15 @@ class dz_reply(threading.Thread):
         print "%s run!" % self.name
 
         self.getFormhash()
+        self.queue.put("formhash:%s\n" % self.formhash)
         self.getFid()
+        self.queue.put("fid:%s\n" % self.fid)
         while True:
             if self.threadEvent.isSet():
                 self.reply()
-                time.sleep(float(self.speed))
-            else:
-                break
+                self.queue.put(u'第%s次回帖:%s\n' % (self.count,self.status))
+                self.queue.put(u'等待:%s秒\n' % self.speed)
+                time.sleep(float(self.speed)) #线程睡眠了
 
 
 
@@ -150,6 +154,7 @@ class dz_reply(threading.Thread):
     def reply(self):
         self.count = self.count +1
         msg = random.choice(self.msgs)
+        self.queue.put(u'内容:%s\n' % msg)
         reply_url = self.host+"/forum.php?mod=post&action=reply&fid="+self.fid+"&tid="+self.tid+"&extra=page\%3D1&replysubmit=yes&infloat=yes&handlekey=fastpost&inajax=1"
         headers = {
            # "Referer": "http://bbs.168hs.com/forum.php?mod=post&action=newthread&fid=159",
