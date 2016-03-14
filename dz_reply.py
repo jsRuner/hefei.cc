@@ -38,13 +38,19 @@ class dz_reply(threading.Thread):
         self.msgs = msgs
         self.count = 0 #回帖的次数
 
+        self.site_charset = "utf-8"
+
         self.formhash = False
         self.fid = False
         self.status =False
 
-        self.setEncode()
+        # self.setEncode()
+
+        # print self.site_charset
+        # exit()
 
         self.opener = self.login()
+        self.setEncode()
 
         pass
     def run(self):
@@ -68,15 +74,17 @@ class dz_reply(threading.Thread):
 
 
 
-
+    #todo:存在问题。
     def setEncode(self):
-        html =  urllib.urlopen(self.host).read()
-        patter = re.compile('charset=utf-8',re.S)
-        result = re.findall(patter,html)
-        if result and len(result) > 0:
+        html =  self.opener.open(urllib2.Request(self.host)).read()
+        print html
+        # patter = re.compile('charset=utf-8',re.S)
+        # result = re.findall(patter,html)
+        if 'utf-8' in html.lower():
             self.site_charset = "utf-8"
         else:
             self.site_charset = "gbk"
+        # exit(0)
 
     def islogin(self):
         html =  self.opener.open(urllib2.Request(self.host)).read().decode(self.site_charset)
@@ -105,7 +113,9 @@ class dz_reply(threading.Thread):
 
         req = urllib2.Request(login_url, post_data)
         result = opener.open(req)
-        print result.read().decode(self.site_charset)
+        print result.read()
+        print self.site_charset
+        # print result.read().decode(self.site_charset)
         return opener
     def getFormhash(self):
         topic_url = "%s/thread-%s-1-1.html" %(self.host,self.tid)
@@ -183,4 +193,16 @@ class dz_reply(threading.Thread):
 
 
 if __name__ == '__main__':
+    # request = urllib2.Request('http://bbs.chizhouren.com')
+    # request.add_header('User-Agent', 'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/48.0.2564.116 Safari/537.36')
+    # request.add_header('Host', 'bbs.chizhouren.com')
+    # response = urllib2.urlopen(request)
+    # html =  response.read()
+    # print html
+    #   # patter = re.compile('charset=utf-8',re.S)
+    #     # result = re.findall(patter,html)
+    # if 'utf-8' in html.lower():
+    #     print 11
+    # else:
+    #     print 22
     pass
