@@ -14,6 +14,11 @@
 """
 import wx
 import dz_reply
+import threading
+import time
+
+
+flag = False #开关。
 
 
 def func():
@@ -32,6 +37,10 @@ class MainWindow(wx.Frame):
         wx.Frame.__init__(self, parent, title=title, size=(600, 600))
 
         self.objs ={}
+
+        self.isStop = False #是否停止。
+
+        self.sinal = False
 
         self.setupContent()
 
@@ -74,6 +83,7 @@ class MainWindow(wx.Frame):
 
         siteLabel = wx.StaticText(panel, -1, u"站点域名:")
         siteText = wx.TextCtrl(panel, -1, "http://bbs.luanren.com",size=(400,-1))
+        siteText.Enable(False)
 
         self.objs['host'] = siteText
 
@@ -91,7 +101,7 @@ class MainWindow(wx.Frame):
 
 
         topicLabel = wx.StaticText(panel, -1, u"帖子编号(tid):")
-        topicText = wx.TextCtrl(panel, -1,"")
+        topicText = wx.TextCtrl(panel, -1,"5607365")
 
         self.objs['tid'] = topicText
 
@@ -141,7 +151,9 @@ class MainWindow(wx.Frame):
         mainSizer.Add(msgLabel,0,wx.EXPAND)
 
         startBtn = wx.Button(panel, -1, u"启动")
+        self.startBtn = startBtn
         cancelBtn = wx.Button(panel, -1, u"停止")
+        self.startBtn = cancelBtn
 
         btnSizer = wx.BoxSizer(wx.HORIZONTAL)
         btnSizer.Add((20,20), 1)
@@ -160,6 +172,7 @@ class MainWindow(wx.Frame):
         self.host = self.objs['host'].GetValue()
         self.objs['msg'].AppendText(u'网站地址:%s\n' % self.host);
 
+
         self.username = self.objs['username'].GetValue()
         self.objs['msg'].AppendText(u'账号:%s\n' % self.username);
 
@@ -171,28 +184,92 @@ class MainWindow(wx.Frame):
 
         self.speed = self.objs['speed'].GetValue()
         self.objs['msg'].AppendText(u'回帖速度:%s秒\n'% self.speed);
-        self.objs['msg'].AppendText(u'------------------------------------------------');
+        self.objs['msg'].AppendText(u'------------------------------------------------\n');
 
 
-    def onStart(self,evt):
+
+    def replyTopic(self):
+
+
         # print(u'启动了')
         self.objs['msg'].AppendText(u'\n获取参数...\n');
         self.checkValue()
+        self.msgs = [
+            u'不错，支持一下.......',
+            u'已阅，顶一下.......',
+            u'顶一个...........',
+            u'路过帮顶........',
+            u'沙发，沙发.....',
+            u'我的沙发........',
+            u'我来了.........',
+            u'沙发是我的......',
+            u'我来看看.......',
+            u'前排，前排........'
+        ]
+        replyobj =  dz_reply.dz_reply(self.host,self.username,self.pwd,self.tid,self.speed,self.msgs)
+        if replyobj.islogin():
+            self.objs['msg'].AppendText(u'登录成功...\n')
+        else:
+            self.objs['msg'].AppendText(u'登录失败...\n')
 
+        replyobj.getFormhash()
+        self.objs['msg'].AppendText(u'解析formhash:%s\n' % replyobj.formhash)
+        replyobj.getFid()
+        self.objs['msg'].AppendText(u'解析fid:%s\n' % replyobj.fid)
 
-        # replyobj =  dz_reply()
-
-        pass
+        while True:
+            if self.isStop:
+                self.objs['msg'].AppendText(u'你停止了程序')
+                self.objs['msg'].AppendText(u'------------------------------------------------\n');
+                return
+            replyobj.reply()
+            self.objs['msg'].AppendText(u'第%s次回帖:%s' % (replyobj.count,replyobj.status))
+            self.objs['msg'].AppendText(u'等待:%s秒\n' % self.speed)
+            # thread
+            time.sleep(float(self.speed))
     def onStop(self,evt):
         print(u'停止了')
-        pass
-    #对帖子进行回复。
-    def reply(self):
-        #登录
-        #获取内容
-        #回复帖子。
+        # self.startBtn.Enable(True)
+        self.startBtn.Disable()
+        self.isStop = True
+
+        if self.sinal and self.sinal.isSet():
+            self.sinal.clear() #设置信号为假的
+
+
+
         pass
 
+    def onStart(self,evt):
+        self.objs['msg'].AppendText(u'\n获取参数...\n');
+        self.checkValue()
+        self.msgs = [
+            u'不错，支持一下.......',
+            u'已阅，顶一下.......',
+            u'顶一个...........',
+            u'路过帮顶........',
+            u'沙发，沙发.....',
+            u'我的沙发........',
+            u'我来了.........',
+            u'沙发是我的......',
+            u'我来看看.......',
+            u'前排，前排........'
+        ]
+        # replyobj =  dz_reply.dz_reply(self.host,self.username,self.pwd,self.tid,self.speed,self.msgs)
+
+        self.sinal = threading.Event()
+        t = dz_reply.dz_reply("回复线程1",self.sinal,self.host,self.username,self.pwd,self.tid,self.speed,self.msgs)
+        t.start()
+
+        self.sinal.set()
+
+
+
+        # self.startBtn.Enable(False) #禁用按钮
+        # self.startBtn.Disable()
+        # self.isStop = False
+        # thread.start_new_thread(self.replyTopic(),())
+        # pass
 
 def main():
     app = wx.App(False)
@@ -205,4 +282,5 @@ def main():
 
 if __name__ == '__main__':
     main()
-    pass
+    # thread.start_new_thread(main,())
+    # pass11
